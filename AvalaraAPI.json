@@ -1,0 +1,1255 @@
+{
+    "openapi": "3.0.3",
+    "info": {
+        "title": "Avalara E-Invoicing & Live Reporting (ELR): Integration Guide",
+        "description": "Welcome to the _Avalara E-Invoicing & Live Reporting (ELR) Integration Guide!_ This guide is geared toward technology partners and API developers whose integrations will support E-Invoicing.",
+        "version": "1.0.0",
+        "contact": {}
+    },
+    "servers": [
+        {
+            "url": "{{tokenRequestUrl}}"
+        },
+        {
+            "url": "{{baseUrl}}"
+        }
+    ],
+    "paths": {
+        "/connect/token": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "requestToken",
+                "description": "This endpoint requires the `client_id` and `client_secret` credentials to be sent as part of the url-encoded request body along with a `grant_type` property with a value \"client_credentials\".\n\nTo get a clientId and clientSecret, go to [https://sandbox.elr.avalara.com/organizations](https://sandbox.elr.avalara.com/organizations) and generate a secret.\n\nThe response includes the `access_token` which is used for all other requests.\n\n> Attention:  \nPlease don't call the requestToken endpoint before every single request! \n  \n\nYou could implement either of the following approaches:\n\n1. Track the session age in your own implementation. An example script that uses the `expires_in` value from the response to this request for that purpose is included in the pre-request script at collection level, OR\n2. Wait until you get a 401 status code from any further endpoints and retry those requests after getting a new `access_token.`",
+                "operationId": "requesttoken",
+                "requestBody": {
+                    "content": {
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "client_id": {
+                                        "type": "string",
+                                        "example": "{{clientId}}"
+                                    },
+                                    "client_secret": {
+                                        "type": "string",
+                                        "example": "{{clientSecret}}"
+                                    },
+                                    "grant_type": {
+                                        "type": "string",
+                                        "example": "client_credentials"
+                                    }
+                                }
+                            },
+                            "examples": {
+                                "requestToken": {
+                                    "value": {
+                                        "client_id": "{{clientId}}",
+                                        "client_secret": "{{clientSecret}}",
+                                        "grant_type": "client_credentials"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "security": [
+                    {}
+                ]
+            }
+        },
+        "/einvoicing/mandates": {
+            "get": {
+                "tags": [
+                    "Design the user experience",
+                    "Admin and Utilities"
+                ],
+                "summary": "GetMandates",
+                "description": "You can use this endpoint to test that you have successfully connected to the Avalara ELR API.\n\nUse the `access_token` from the requestToken request as a Bearer Token.",
+                "operationId": "getmandates",
+                "parameters": [
+                    {
+                        "name": "$top",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "example": "10"
+                        }
+                    },
+                    {
+                        "name": "$skip",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "example": "1"
+                        }
+                    },
+                    {
+                        "name": "$filter",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "example": "countryCode eq MY"
+                        }
+                    },
+                    {
+                        "name": "$count",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "example": "true"
+                        }
+                    },
+                    {
+                        "name": "$countOnly",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "example": "true"
+                        }
+                    },
+                    {
+                        "name": "avalara-version",
+                        "in": "header",
+                        "schema": {
+                            "type": "string",
+                            "example": "1.1"
+                        }
+                    },
+                    {
+                        "name": "x-avalara-client",
+                        "in": "header",
+                        "schema": {
+                            "type": "string",
+                            "example": "{{X-Avalara-Client}}"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/einvoicing/documents": {
+            "get": {
+                "tags": [
+                    "Design the user experience",
+                    "Document Monitoring & Management"
+                ],
+                "summary": "GetDocumentList",
+                "description": "#### Get the summary of documents\n\nUse this endpoint to get a list of of documents flowing through the Avalara ELR service, which have a processing date within the optional date range (`startDate`/`endDate`) specified.\n\nThe results are sorted by `id` in ascending order.\n\nResponses will be limited to 200 records.\n\nA `@nextlink` property will be provided to access the next 200 records.\n\nOptional query parameters:\n\n- Use the `flow` query parameter to filter outbound (`out`) vs inbound (`in`) documents.\n- `$count` for the total number of records meeting your filter conditions, along **with** the results.\n- `$countOnly` for the total number of records meeting your filter conditions, **without** the results.\n- `$skip` number of records to skip.\n- `$top` set the maximum number of records to include in the response.\n    \n\n> **Tip:** Take a look at the visualiser!",
+                "operationId": "getdocumentlist",
+                "parameters": [
+                    {
+                        "name": "startDate",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "example": "2024-08-01T00:00:00"
+                        },
+                        "description": "Start date of transactions to return, if not specifed then defaults to previous month."
+                    },
+                    {
+                        "name": "endDate",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "example": "2024-08-13T23:59:59"
+                        },
+                        "description": "End date of transactions to return, if not specified then defaults to today."
+                    },
+                    {
+                        "name": "$count",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "example": "true"
+                        },
+                        "description": "Pass true to get the total number of records meeting the query conditions. "
+                    },
+                    {
+                        "name": "$filter",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "example": "documentNumber eq 7654345678"
+                        }
+                    },
+                    {
+                        "name": "flow",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "example": "in"
+                        },
+                        "description": "Optional filter by document direction issued=out received=in"
+                    },
+                    {
+                        "name": "$countOnly",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "example": "true"
+                        },
+                        "description": "Pass true to get only the total number of records meeting the query conditions without the records."
+                    },
+                    {
+                        "name": "$skip",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "example": "0"
+                        }
+                    },
+                    {
+                        "name": "$top",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "example": "50"
+                        }
+                    },
+                    {
+                        "name": "avalara-version",
+                        "in": "header",
+                        "schema": {
+                            "type": "string",
+                            "example": "1.1"
+                        }
+                    },
+                    {
+                        "name": "x-avalara-client",
+                        "in": "header",
+                        "schema": {
+                            "type": "string",
+                            "example": "{{X-Avalara-Client}}"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "headers": {
+                            "Connection": {
+                                "schema": {
+                                    "type": "string",
+                                    "example": "keep-alive"
+                                }
+                            },
+                            "Content-Length": {
+                                "schema": {
+                                    "type": "string",
+                                    "example": "391"
+                                }
+                            },
+                            "Date": {
+                                "schema": {
+                                    "type": "string",
+                                    "example": "Fri, 16 Jun 2023 09:10:04 GMT"
+                                }
+                            },
+                            "strict-transport-security": {
+                                "schema": {
+                                    "type": "string",
+                                    "example": "max-age=63072000; includeSubDomains; preload"
+                                }
+                            },
+                            "x-amz-apigw-id": {
+                                "schema": {
+                                    "type": "string",
+                                    "example": "GmsFCERKFiAFnyg="
+                                }
+                            },
+                            "x-amzn-requestid": {
+                                "schema": {
+                                    "type": "string",
+                                    "example": "54635f4c-0324-4503-90d4-d59164972583"
+                                }
+                            },
+                            "x-amzn-trace-id": {
+                                "schema": {
+                                    "type": "string",
+                                    "example": "Root=1-648c26ec-d5459ab39e03b6c07e32ddfd;Sampled=0;lineage=7014ce87:0"
+                                }
+                            },
+                            "x-avalara-uid": {
+                                "schema": {
+                                    "type": "string",
+                                    "example": "1ec3e482-ad05-4ec9-ba0b-c49c32e32a0b"
+                                }
+                            },
+                            "x-correlation-id": {
+                                "schema": {
+                                    "type": "string",
+                                    "example": "1ec3e482-ad05-4ec9-ba0b-c49c32e32a0b"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "@nextLink": {
+                                            "nullable": true,
+                                            "example": null
+                                        },
+                                        "@recordsetCount": {
+                                            "type": "number",
+                                            "example": 1
+                                        },
+                                        "value": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "countryCode": {
+                                                        "type": "string",
+                                                        "example": "SA"
+                                                    },
+                                                    "countryMandate": {
+                                                        "type": "string",
+                                                        "example": "SA-B2B-CLEARANCE"
+                                                    },
+                                                    "customerName": {
+                                                        "type": "string",
+                                                        "example": "KSA Customer Company"
+                                                    },
+                                                    "documentDate": {
+                                                        "type": "string",
+                                                        "example": "2023-06-16T00:00:00.000Z"
+                                                    },
+                                                    "documentNumber": {
+                                                        "type": "string",
+                                                        "example": "KSA_INVOICE_1686905718"
+                                                    },
+                                                    "flow": {
+                                                        "type": "string",
+                                                        "example": "out"
+                                                    },
+                                                    "id": {
+                                                        "type": "string",
+                                                        "example": "2023-06-405776"
+                                                    },
+                                                    "interface": {
+                                                        "nullable": true,
+                                                        "example": null
+                                                    },
+                                                    "processDateTime": {
+                                                        "type": "string",
+                                                        "example": "2023-06-16T08:55:19:068"
+                                                    },
+                                                    "receiver": {
+                                                        "nullable": true,
+                                                        "example": null
+                                                    },
+                                                    "status": {
+                                                        "type": "string",
+                                                        "example": "Complete"
+                                                    },
+                                                    "supplierName": {
+                                                        "type": "string",
+                                                        "example": "Avalara KSA"
+                                                    }
+                                                }
+                                            },
+                                            "example": [
+                                                {
+                                                    "countryCode": "SA",
+                                                    "countryMandate": "SA-B2B-CLEARANCE",
+                                                    "customerName": "KSA Customer Company",
+                                                    "documentDate": "2023-06-16T00:00:00.000Z",
+                                                    "documentNumber": "KSA_INVOICE_1686905718",
+                                                    "flow": "out",
+                                                    "id": "2023-06-405776",
+                                                    "interface": null,
+                                                    "processDateTime": "2023-06-16T08:55:19:068",
+                                                    "receiver": null,
+                                                    "status": "Complete",
+                                                    "supplierName": "Avalara KSA"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                },
+                                "examples": {
+                                    "OK": {
+                                        "value": {
+                                            "@nextLink": null,
+                                            "@recordsetCount": 1,
+                                            "value": [
+                                                {
+                                                    "countryCode": "SA",
+                                                    "countryMandate": "SA-B2B-CLEARANCE",
+                                                    "customerName": "KSA Customer Company",
+                                                    "documentDate": "2023-06-16T00:00:00.000Z",
+                                                    "documentNumber": "KSA_INVOICE_1686905718",
+                                                    "flow": "out",
+                                                    "id": "2023-06-405776",
+                                                    "interface": null,
+                                                    "processDateTime": "2023-06-16T08:55:19:068",
+                                                    "receiver": null,
+                                                    "status": "Complete",
+                                                    "supplierName": "Avalara KSA"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Design the submission workflow",
+                    "Document Submission"
+                ],
+                "summary": "SubmitDocument",
+                "description": "#### Submit the document\n\nSending a document to this endpoint creates an document in the format required by the country mandate and triggers the workflow to transmit the document to the authority (if required) or end customer.\n\nThis `form-data` request requires the following part objects.\n\n| **Key** | **Description** |\n| --- | --- |\n| metadata | The `metadata` instructs the Avalara E-Invoicing service how to process the `data` (invoice) provided.  <br>  <br>You can call and (optionally) filter the **Admin and Utilities > GetMandates** endpoint to retrieve all of the available `countryMandate` details and available values that should populate the properties in this `metadata` object.  <br>  <br> |\n| data | The `data` object is the details of the invoice in the `dataFormat` and `dataFormatVersion` schema. Currently, [UBL - 2.1]() is the only supported `data` input schema.  <br>  <br>Each `countryMandate` has different required or conditional fields.  <br>  <br>You can filter the **Admin and Utilities > GetDataInputFields** endpoint to retrieve the required fields and links to their descriptions for a given `countryMandate` . |\n\n> **Attention:** If there is any structural or validation error in the `metadata` object, the response will return an error, informing what needs to be corrected (see Bad Request example). However, to check if there is any issue with the XML file posted, please check it using `GetDocumentStatus`. \n  \n\nThis collection includes saved examples for all `countryMandate` supported at the time of publishing, as well error code examples.\n\n> **Please note:** The `data` object of this request and the saved examples of this request contain environment variables {{`documentNumber`}}, {{`documentDate`}} which are re-calculated and set by the pre-request script, so that you don't have any unintended duplicate invoice numbers or invalid dates. \n  \n\n##### Response\n\nThe response includes a unique `id` which can be used to request a status to confirm if the document was accepted at the destination or has been rejected for any reason.\n\nThe `id` can also be used to download a copy of the document.",
+                "operationId": "submitdocument",
+                "parameters": [
+                    {
+                        "name": "avalara-version",
+                        "in": "header",
+                        "schema": {
+                            "type": "string",
+                            "example": "1.0"
+                        }
+                    },
+                    {
+                        "name": "x-avalara-client",
+                        "in": "header",
+                        "schema": {
+                            "type": "string",
+                            "example": "{{X-Avalara-Client}}"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "data": {
+                                        "description": "UBL 2.1 Invoice. Call `GetDataInputFields` endpoint to get a list of the data fields that are required.",
+                                        "type": "string",
+                                        "example": "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n<CreditNote \n  xmlns=\"urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2\" \nxmlns:cac=\"urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2\" \n   xmlns:cbc=\"urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2\" \n    xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" \n    xsi:schemaLocation=\"urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2 http://docs.oasis-open.org/ubl/os-UBL-2.1/xsd/maindoc/UBL-CreditNote-2.1.xsd\">\n    <cbc:CustomizationID>urn:cen.eu:en16931:2017#compliant#urn:fdc:peppol.eu:2017:poacc:billing:3.0</cbc:CustomizationID>\n    <cbc:ProfileID>reporting:1.0</cbc:ProfileID>\n    <cbc:ID>KSA_II_CREDITNOTE</cbc:ID>\n    <cbc:IssueDate>2023-06-28</cbc:IssueDate>\n    <cbc:IssueTime>13:28:53</cbc:IssueTime>\n    <cbc:CreditNoteTypeCode>381</cbc:CreditNoteTypeCode>\n    <cbc:TaxPointDate>2023-06-28</cbc:TaxPointDate>\n    <cbc:DocumentCurrencyCode>SAR</cbc:DocumentCurrencyCode>\n    <cbc:TaxCurrencyCode>SAR</cbc:TaxCurrencyCode>\n    <cbc:BuyerReference>BUYER_REF</cbc:BuyerReference>\n    <cac:BillingReference>\n      <cac:InvoiceDocumentReference>\n        <cbc:ID>KSA_II_INVOICE</cbc:ID>\n      </cac:InvoiceDocumentReference>\n    </cac:BillingReference>\n    <cac:AccountingSupplierParty>\n        <cac:Party>\n            <cac:PartyIdentification>\n                <cbc:ID schemeID=\"CRN\">45634576889</cbc:ID>\n            </cac:PartyIdentification>\n            <cac:PartyName>\n                <cbc:Name>Avalara KSA</cbc:Name>\n            </cac:PartyName>\n            <cac:PostalAddress>\n                <cbc:StreetName>شارع</cbc:StreetName>\n                <cbc:BuildingNumber>1260</cbc:BuildingNumber>\n                <cbc:PlotIdentification>1234</cbc:PlotIdentification>\n                <cbc:CitySubdivisionName>يصرف</cbc:CitySubdivisionName>\n                <cbc:CityName>City</cbc:CityName>\n                <cbc:PostalZone>6063</cbc:PostalZone>\n                <cbc:CountrySubentity>State</cbc:CountrySubentity>\n                <cac:AddressLine>\n                    <cbc:Line>1234</cbc:Line>\n                </cac:AddressLine>\n                <cac:Country>\n                    <cbc:IdentificationCode>SA</cbc:IdentificationCode>\n                </cac:Country>\n            </cac:PostalAddress>\n            <cac:PartyTaxScheme>\n                <cbc:CompanyID>310175397400003</cbc:CompanyID>\n                <cac:TaxScheme>\n                    <cbc:ID>VAT</cbc:ID>\n                </cac:TaxScheme>\n            </cac:PartyTaxScheme>\n            <cac:PartyLegalEntity>\n                <cbc:RegistrationName>شركة</cbc:RegistrationName>\n                <cbc:CompanyID>310175397400003</cbc:CompanyID>\n            </cac:PartyLegalEntity>\n        </cac:Party>\n    </cac:AccountingSupplierParty>\n    <cac:AccountingCustomerParty>\n        <cac:Party>\n            <cac:PartyIdentification>\n                <cbc:ID schemeID=\"GCC\">1234567890</cbc:ID>\n            </cac:PartyIdentification>\n            <cac:PartyName>\n                <cbc:Name>KSA Customer Company</cbc:Name>\n            </cac:PartyName>\n            <cac:PostalAddress>\n                <cbc:StreetName>اسم الشارع</cbc:StreetName>\n                <cbc:BuildingNumber>175</cbc:BuildingNumber>\n                <cbc:PlotIdentification>8118</cbc:PlotIdentification>\n                <cbc:CitySubdivisionName>حي العارض</cbc:CitySubdivisionName>\n                <cbc:CityName>مدينة</cbc:CityName>\n                <cbc:PostalZone>13337</cbc:PostalZone>\n                <cbc:CountrySubentity>MN</cbc:CountrySubentity>\n                <cac:AddressLine>\n                    <cbc:Line>8118</cbc:Line>\n                </cac:AddressLine>\n                <cac:Country>\n                    <cbc:IdentificationCode>SA</cbc:IdentificationCode>\n                </cac:Country>\n            </cac:PostalAddress>\n            <cac:PartyTaxScheme>\n                <cbc:CompanyID>312341238901243</cbc:CompanyID>\n                <cac:TaxScheme>\n                    <cbc:ID>VAT</cbc:ID>\n                </cac:TaxScheme>\n            </cac:PartyTaxScheme>\n            <cac:PartyLegalEntity>\n                <cbc:RegistrationName>هندسة باريستون</cbc:RegistrationName>\n            </cac:PartyLegalEntity>\n        </cac:Party>\n    </cac:AccountingCustomerParty>\n    <cac:Delivery>\n        <cbc:ActualDeliveryDate>2023-06-12</cbc:ActualDeliveryDate>\n        <cbc:LatestDeliveryDate>2023-06-12</cbc:LatestDeliveryDate>\n    </cac:Delivery>\n    <cac:PaymentMeans>\n        <cbc:PaymentMeansCode>1</cbc:PaymentMeansCode>\n        <cac:PayeeFinancialAccount>\n            <cbc:ID>SE6712200115199</cbc:ID>\n            <cac:FinancialInstitutionBranch>\n                <cbc:ID>040826</cbc:ID>\n            </cac:FinancialInstitutionBranch>\n        </cac:PayeeFinancialAccount>\n    </cac:PaymentMeans>\n    <cac:PaymentTerms>\n        <cbc:Note>Reason for the credit note</cbc:Note>\n    </cac:PaymentTerms>\n    <cac:TaxTotal>\n        <cbc:TaxAmount currencyID=\"SAR\">150.00</cbc:TaxAmount>\n        <cac:TaxSubtotal>\n            <cbc:TaxableAmount currencyID=\"SAR\">1000.00</cbc:TaxableAmount>\n            <cbc:TaxAmount currencyID=\"SAR\">150.00</cbc:TaxAmount>\n            <cac:TaxCategory>\n                <cbc:ID>S</cbc:ID>\n                <cbc:Percent>15.00</cbc:Percent>\n                <cac:TaxScheme>\n                    <cbc:ID>VAT</cbc:ID>\n                </cac:TaxScheme>\n            </cac:TaxCategory>\n        </cac:TaxSubtotal>\n    </cac:TaxTotal>\n    <cac:LegalMonetaryTotal>\n        <cbc:LineExtensionAmount currencyID=\"SAR\">1000.00</cbc:LineExtensionAmount>\n        <cbc:TaxExclusiveAmount currencyID=\"SAR\">1000.00</cbc:TaxExclusiveAmount>\n        <cbc:TaxInclusiveAmount currencyID=\"SAR\">1150.00</cbc:TaxInclusiveAmount>\n        <cbc:PayableAmount currencyID=\"SAR\">1150.00</cbc:PayableAmount>\n    </cac:LegalMonetaryTotal>\n    <cac:CreditNoteLine>\n        <cbc:ID>1</cbc:ID>\n        <cbc:CreditedQuantity unitCode=\"C62\">20.00000</cbc:CreditedQuantity>\n        <cbc:LineExtensionAmount currencyID=\"SAR\">1000.00</cbc:LineExtensionAmount>\n        <cac:TaxTotal>\n            <cbc:TaxAmount currencyID=\"SAR\">150.00</cbc:TaxAmount>\n            <cbc:RoundingAmount currencyID=\"SAR\">1150.00</cbc:RoundingAmount>\n        </cac:TaxTotal>\n        <cac:Item>\n            <cbc:Name>Component C1</cbc:Name>\n            <cac:SellersItemIdentification>\n                <cbc:ID>00C1</cbc:ID>\n            </cac:SellersItemIdentification>\n            <cac:StandardItemIdentification>\n                <cbc:ID schemeID=\"CV\">5435435435</cbc:ID>\n            </cac:StandardItemIdentification>\n            <cac:ClassifiedTaxCategory>\n                <cbc:ID>S</cbc:ID>\n                <cbc:Percent>15.00</cbc:Percent>\n                <cac:TaxScheme>\n                    <cbc:ID>VAT</cbc:ID>\n                </cac:TaxScheme>\n            </cac:ClassifiedTaxCategory>\n        </cac:Item>\n        <cac:Price>\n            <cbc:PriceAmount currencyID=\"SAR\">50.00</cbc:PriceAmount>\n            <cbc:BaseQuantity unitCode=\"C62\">1.00000</cbc:BaseQuantity>\n        </cac:Price>\n    </cac:CreditNoteLine>\n</CreditNote>"
+                                    },
+                                    "metadata": {
+                                        "description": "Payload metadata. Call `GetMandates` endpoint to get available `countryMandate` and `countryCode` values.",
+                                        "type": "string",
+                                        "example": "{ \"workflowId\":\"partner-einvoicing\", \"dataFormat\": \"ubl-creditnote\", \"dataFormatVersion\": \"2.1\", \"countryCode\": \"SA\", \"countryMandate\": \"SA-B2B-CLEARANCE\"}"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created / Send & Receive / DE-B2G-PEPPOL / AU-B2G-PEPPOL / PT-B2B-CLEARANCE / DE-ZUGFERD / SA-Phase1-B2B / SA-Phase1-B2C-PDF / SA-B2B-CLEARANCE Invoice / SA-B2B-CLEARANCE CreditNote / PL-B2B-EINVOICE / PL-B2B-EINVOICE new version / PL-B2B-EINVOICE- Credit Note / ES-B2B-FACE / SubmitDocument",
+                        "headers": {
+                            "Connection": {
+                                "schema": {
+                                    "type": "string",
+                                    "example": "keep-alive"
+                                }
+                            },
+                            "Content-Length": {
+                                "schema": {
+                                    "type": "string",
+                                    "example": "24"
+                                }
+                            },
+                            "Date": {
+                                "schema": {
+                                    "type": "string",
+                                    "example": "Thu, 06 Jul 2023 12:08:36 GMT"
+                                }
+                            },
+                            "Location": {
+                                "schema": {
+                                    "type": "string",
+                                    "example": "/einvoicing/v0/ctc/invoices/2023-07-059640/status"
+                                }
+                            },
+                            "retry-after": {
+                                "schema": {
+                                    "type": "string",
+                                    "example": "5"
+                                }
+                            },
+                            "strict-transport-security": {
+                                "schema": {
+                                    "type": "string",
+                                    "example": "max-age=63072000; includeSubDomains; preload"
+                                }
+                            },
+                            "x-amz-apigw-id": {
+                                "schema": {
+                                    "type": "string",
+                                    "example": "HpA-YGztliAFhPA="
+                                }
+                            },
+                            "x-amzn-requestid": {
+                                "schema": {
+                                    "type": "string",
+                                    "example": "15a4a926-0c01-4f63-aa84-076988fa0fa4"
+                                }
+                            },
+                            "x-amzn-trace-id": {
+                                "schema": {
+                                    "type": "string",
+                                    "example": "Root=1-64a6aec2-01cbcd98226440ce2f14733e;Sampled=0;lineage=7014ce87:0"
+                                }
+                            },
+                            "x-avalara-uid": {
+                                "schema": {
+                                    "type": "string",
+                                    "example": "4f675631-1dc0-4bfe-944c-402af4467110"
+                                }
+                            },
+                            "x-correlation-id": {
+                                "schema": {
+                                    "type": "string",
+                                    "example": "4f675631-1dc0-4bfe-944c-402af4467110"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "id": {
+                                            "type": "string",
+                                            "example": "2022-01-008572"
+                                        }
+                                    }
+                                },
+                                "examples": {
+                                    "AU-B2G-PEPPOL": {
+                                        "value": {
+                                            "id": "2022-10-001524"
+                                        }
+                                    },
+                                    "Created": {
+                                        "value": {
+                                            "id": "2022-01-008572"
+                                        }
+                                    },
+                                    "DE-B2G-PEPPOL": {
+                                        "value": {
+                                            "id": "2022-10-001524"
+                                        }
+                                    },
+                                    "DE-ZUGFERD": {
+                                        "value": {
+                                            "id": "2022-10-001527"
+                                        }
+                                    },
+                                    "ES-B2B-FACE": {
+                                        "value": {
+                                            "id": "2022-10-001539"
+                                        }
+                                    },
+                                    "PL-B2B-EINVOICE": {
+                                        "value": {
+                                            "id": "2022-10-001536"
+                                        }
+                                    },
+                                    "PL-B2B-EINVOICE new version": {
+                                        "value": {
+                                            "id": "2023-07-633797"
+                                        }
+                                    },
+                                    "PL-B2B-EINVOICE- Credit Note": {
+                                        "value": {
+                                            "id": "2023-07-634015"
+                                        }
+                                    },
+                                    "PT-B2B-CLEARANCE": {
+                                        "value": {
+                                            "id": "2022-10-001499"
+                                        }
+                                    },
+                                    "SA-B2B-CLEARANCE CreditNote": {
+                                        "value": {
+                                            "id": "2023-07-007805"
+                                        }
+                                    },
+                                    "SA-B2B-CLEARANCE Invoice": {
+                                        "value": {
+                                            "id": "2023-06-405642"
+                                        }
+                                    },
+                                    "SA-Phase1-B2B": {
+                                        "value": {
+                                            "id": "2022-10-001530"
+                                        }
+                                    },
+                                    "SA-Phase1-B2C-PDF": {
+                                        "value": {
+                                            "id": "2022-10-001533"
+                                        }
+                                    },
+                                    "Send & Receive": {
+                                        "value": {
+                                            "id": "2022-10-001524"
+                                        }
+                                    },
+                                    "SubmitDocument": {
+                                        "value": {
+                                            "id": "2023-07-059640"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "headers": {
+                            "Connection": {
+                                "schema": {
+                                    "type": "string",
+                                    "example": "keep-alive"
+                                }
+                            },
+                            "Content-Length": {
+                                "schema": {
+                                    "type": "string",
+                                    "example": "66"
+                                }
+                            },
+                            "Date": {
+                                "schema": {
+                                    "type": "string",
+                                    "example": "Fri, 28 Oct 2022 14:21:02 GMT"
+                                }
+                            },
+                            "strict-transport-security": {
+                                "schema": {
+                                    "type": "string",
+                                    "example": "max-age=63072000; includeSubDomains; preload"
+                                }
+                            },
+                            "x-amz-apigw-id": {
+                                "schema": {
+                                    "type": "string",
+                                    "example": "auDEGHsgDoEFqKA="
+                                }
+                            },
+                            "x-amzn-requestid": {
+                                "schema": {
+                                    "type": "string",
+                                    "example": "e6d5d312-65ce-4d7a-ac51-85feefdc3503"
+                                }
+                            },
+                            "x-amzn-trace-id": {
+                                "schema": {
+                                    "type": "string",
+                                    "example": "Root=1-635be54d-d884b6967b01df7565d2b2a8;Sampled=0"
+                                }
+                            },
+                            "x-avalara-uid": {
+                                "schema": {
+                                    "type": "string",
+                                    "example": "e188acd1-903f-4cf8-806b-79af41bf2daa"
+                                }
+                            },
+                            "x-correlation-id": {
+                                "schema": {
+                                    "type": "string",
+                                    "example": "e188acd1-903f-4cf8-806b-79af41bf2daa"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "400"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Country mandate not yet available "
+                                        }
+                                    }
+                                },
+                                "examples": {
+                                    "Bad Request": {
+                                        "value": {
+                                            "error": "400",
+                                            "message": "Country mandate not yet available "
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "Message": {
+                                            "type": "string",
+                                            "example": "User is not authorized to access this resource with an explicit deny"
+                                        }
+                                    }
+                                },
+                                "examples": {
+                                    "Forbidden": {
+                                        "value": {
+                                            "Message": "User is not authorized to access this resource with an explicit deny"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/einvoicing/documents/{id}/status": {
+            "get": {
+                "tags": [
+                    "Design the user experience",
+                    "Document Monitoring & Management"
+                ],
+                "summary": "GetDocumentStatus",
+                "description": "#### Get the status of the sent document\n\nUse the unique `id` from the SubmitDocument endpoint to obtain the status related to the submission of your document.\n\n> Attention: We would recommend allowing around 10 seconds between the SubmitDocument and GetDocumentStatus requests in order to avoid \"Pending\" statuses that are not due to waiting for an end recipient (manual) input. \n  \n\n##### Response\n\nA successful response contains a `status`.\n\n| **Status** | **Description** |\n| --- | --- |\n| Complete | This generally indicates that the process is complete and the end recipient of the document has received the document. |\n| Pending | This generally indicates that either the Avalara service or the E-Invoicing network being utilised is still processing the document, or a tax authority has yet to forward the document to the end recipient. |\n| Error | An error has been identified and is described in one of the `events`array objects.  <br>This is also where any `data` object validations (e.g UBL 2.1 schema XSD) failures will be exposed.  <br>See the saved examples in this collection to see a variety of error messages. |\n\nAn error response (404) will be returned if no document with the specified `id` can be found.",
+                "operationId": "getdocumentstatus",
+                "parameters": [
+                    {
+                        "name": "avalara-version",
+                        "in": "header",
+                        "schema": {
+                            "type": "string",
+                            "example": "1.0"
+                        }
+                    },
+                    {
+                        "name": "x-avalara-client",
+                        "in": "header",
+                        "schema": {
+                            "type": "string",
+                            "example": "{{X-Avalara-Client}}"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK / OK Error - Invalid XML / OK - Status Complete - PT-B2B-CLEARANCE / OK - Status Complete - PL-B2B-EINVOICE / OK - Status Pending / OK -  Status Error - Invalid XML",
+                        "headers": {
+                            "Connection": {
+                                "schema": {
+                                    "type": "string",
+                                    "example": "keep-alive"
+                                }
+                            },
+                            "Content-Length": {
+                                "schema": {
+                                    "type": "string",
+                                    "example": "214"
+                                }
+                            },
+                            "Date": {
+                                "schema": {
+                                    "type": "string",
+                                    "example": "Mon, 31 Oct 2022 15:46:10 GMT"
+                                }
+                            },
+                            "strict-transport-security": {
+                                "schema": {
+                                    "type": "string",
+                                    "example": "max-age=63072000; includeSubDomains; preload"
+                                }
+                            },
+                            "x-amz-apigw-id": {
+                                "schema": {
+                                    "type": "string",
+                                    "example": "a4IWKH9ADoEFTXQ="
+                                }
+                            },
+                            "x-amzn-requestid": {
+                                "schema": {
+                                    "type": "string",
+                                    "example": "b1401483-14dc-4a21-8a52-e688fccd70ec"
+                                }
+                            },
+                            "x-amzn-trace-id": {
+                                "schema": {
+                                    "type": "string",
+                                    "example": "Root=1-635fedc0-8af7b8534317edad1f41d9e9;Sampled=0"
+                                }
+                            },
+                            "x-avalara-uid": {
+                                "schema": {
+                                    "type": "string",
+                                    "example": "75f715dc-c433-4a0e-9c7c-f5fc3d9866b0"
+                                }
+                            },
+                            "x-correlation-id": {
+                                "schema": {
+                                    "type": "string",
+                                    "example": "75f715dc-c433-4a0e-9c7c-f5fc3d9866b0"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "events": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "eventDateTime": {
+                                                        "type": "string",
+                                                        "example": "2022-01-10T15:30:01:411"
+                                                    },
+                                                    "message": {
+                                                        "type": "string",
+                                                        "example": "eInvoice sent via Peppol"
+                                                    }
+                                                }
+                                            },
+                                            "example": [
+                                                {
+                                                    "eventDateTime": "2022-01-10T15:30:01:411",
+                                                    "message": "eInvoice sent via Peppol"
+                                                }
+                                            ]
+                                        },
+                                        "id": {
+                                            "type": "string",
+                                            "example": "2022-01-008572"
+                                        },
+                                        "status": {
+                                            "type": "string",
+                                            "example": "Complete"
+                                        }
+                                    }
+                                },
+                                "examples": {
+                                    "OK": {
+                                        "value": {
+                                            "events": [
+                                                {
+                                                    "eventDateTime": "2022-01-10T15:30:01:411",
+                                                    "message": "eInvoice sent via Peppol"
+                                                }
+                                            ],
+                                            "id": "2022-01-008572",
+                                            "status": "Complete"
+                                        }
+                                    },
+                                    "OK -  Status Error - Invalid XML": {
+                                        "value": {
+                                            "events": [
+                                                {
+                                                    "eventDateTime": "2022-10-31T15:45:53:735",
+                                                    "message": "Outbound eInvoice received"
+                                                },
+                                                {
+                                                    "eventDateTime": "2022-10-31T15:45:54:216",
+                                                    "message": "Invalid XML"
+                                                }
+                                            ],
+                                            "id": "2022-10-001801",
+                                            "status": "Error"
+                                        }
+                                    },
+                                    "OK - Status Complete - PL-B2B-EINVOICE": {
+                                        "value": {
+                                            "events": [
+                                                {
+                                                    "eventDateTime": "2022-10-04T12:58:06:238",
+                                                    "message": "Outbound eInvoice received"
+                                                },
+                                                {
+                                                    "eventDateTime": "2022-10-04T12:59:40:148",
+                                                    "message": "Zakończenie etapu archiwizacji danych faktury - KSEFRefNumber: 8126875806-20221004-34D479-8D4727-FB"
+                                                }
+                                            ],
+                                            "id": "2022-10-000092",
+                                            "status": "Complete"
+                                        }
+                                    },
+                                    "OK - Status Complete - PT-B2B-CLEARANCE": {
+                                        "value": {
+                                            "events": [
+                                                {
+                                                    "eventDateTime": "2022-11-11T13:28:53:127",
+                                                    "message": "Outbound eInvoice received"
+                                                },
+                                                {
+                                                    "eventDateTime": "2022-11-11T13:29:04:544",
+                                                    "message": "eInvoice created in required format"
+                                                },
+                                                {
+                                                    "eventDateTime": "2022-11-11T13:29:04:544",
+                                                    "message": "QR-Code created",
+                                                    "responseKey": "QRCODE",
+                                                    "responseValue": "A:980716438*B:123456789*C:PT*D:FT*E:N*F:20221111*G:FAMONC2022/237*H:0*I1:PT*I7:3800.00*I8:874.00*N:874.00*O:4674.00*Q:YvUL*R:2616"
+                                                },
+                                                {
+                                                    "eventDateTime": "2022-11-11T13:29:04:544",
+                                                    "message": "Legal-Stamp created",
+                                                    "responseKey": "LEGALSTAMP",
+                                                    "responseValue": "YvUL-Processado por programa certificado nÂº 2616/AT /Â© PRIMAVERA BSS /"
+                                                },
+                                                {
+                                                    "eventDateTime": "2022-11-11T13:29:04:544",
+                                                    "message": "ATCUD created",
+                                                    "responseKey": "ATCUD",
+                                                    "responseValue": ""
+                                                }
+                                            ],
+                                            "id": "2022-11-000958",
+                                            "status": "Complete"
+                                        }
+                                    },
+                                    "OK - Status Pending": {
+                                        "value": {
+                                            "events": [
+                                                {
+                                                    "eventDateTime": "2022-10-04T13:34:03:862",
+                                                    "message": "Outbound eInvoice received"
+                                                }
+                                            ],
+                                            "id": "2022-10-000104",
+                                            "status": "Pending"
+                                        }
+                                    },
+                                    "OK Error - Invalid XML": {
+                                        "value": {
+                                            "events": [
+                                                {
+                                                    "eventDateTime": "2022-10-31T15:45:53:735",
+                                                    "message": "Outbound eInvoice received"
+                                                },
+                                                {
+                                                    "eventDateTime": "2022-10-31T15:45:54:216",
+                                                    "message": "Invalid XML"
+                                                }
+                                            ],
+                                            "id": "2022-10-001801",
+                                            "status": "Error"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden / Forbidden",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "Message": {
+                                            "type": "string",
+                                            "example": "User is not authorized to access this resource with an explicit deny"
+                                        }
+                                    }
+                                },
+                                "examples": {
+                                    "Forbidden": {
+                                        "value": {
+                                            "Message": "User is not authorized to access this resource with an explicit deny"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not found / Not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "404"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Not Found"
+                                        }
+                                    }
+                                },
+                                "examples": {
+                                    "Not found": {
+                                        "value": {
+                                            "error": "404",
+                                            "message": "Not Found"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "parameters": [
+                {
+                    "name": "id",
+                    "in": "path",
+                    "required": true,
+                    "schema": {
+                        "type": "string",
+                        "example": "{{documentId}}"
+                    }
+                }
+            ]
+        },
+        "/einvoicing/documents/{id}/$download": {
+            "get": {
+                "tags": [
+                    "Design the user experience",
+                    "Document Monitoring & Management"
+                ],
+                "summary": "DownloadDocument",
+                "description": "#### Download the document\n\nWhen a document is available (document has `status` of `Complete`), it can be downloaded from this endpoint in at least one media type (e.g. `application/xml` or `application/pdf`). The desired MIME type should be passed in the `Accept` request header.\n\nThe available formats depends on the mandate. Check the use the GetMandates method for a list of the available MIME types that can be downloaded for each `countryMandate.`\n\nFor every `countryMandate`, and for any `interface` the `application\\vnd.oasis.ubl+xml` format (UBL) will be available to download:\n\n- For an **outbound** document, this is what you sent Avalara under SubmitDocument’.\n- For an **inbound** document, this is the result of Avalara converting the format received from the network/tax authority (the other media type available to download) back to UBL.\n    \n\nIf you pass a invalid `Accept` header value, you will get a `406` error with a message describing the correct available values.\n\nIf the file has not yet been created then status code: `404` `Not found` is returned.",
+                "operationId": "downloaddocument",
+                "parameters": [
+                    {
+                        "name": "avalara-version",
+                        "in": "header",
+                        "schema": {
+                            "type": "string",
+                            "example": "1.0"
+                        }
+                    },
+                    {
+                        "name": "x-avalara-client",
+                        "in": "header",
+                        "schema": {
+                            "type": "string",
+                            "example": "{{X-Avalara-Client}}"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "parameters": [
+                {
+                    "name": "id",
+                    "in": "path",
+                    "required": true,
+                    "schema": {
+                        "type": "string",
+                        "example": "{{documentId}}"
+                    }
+                }
+            ]
+        },
+        "/einvoicing/data-input-fields": {
+            "get": {
+                "tags": [
+                    "Design the user experience",
+                    "Admin and Utilities"
+                ],
+                "summary": "GetDataInputFields",
+                "description": "#### List of data input fields\n\nThis endpoint provides a list of UBL paths that could or should be used when passing in your document `data` .\n\nUsing the `$filter` query parameter you can request to only retrieve fields that are required, conditional or optional for a given `countryMandate`. E.g. `$filter=countryMandate eq DE-B2G-PEPPOL`\n\nYou can use the `GetMandates` endpoint to retrieve all available `countryMandates` to use as query parameter values.\n\nYou can also use nested filtering to limit the returned fields to those that have a specific criticality. E.g. `$filter=requiredFor/countryMandate eq DE-B2G-PEPPOL OR conditionalFor/countryMandate eq DE-B2G-PEPPOL`would return only UBL fields that are required or conditional for the `DE-B2G-PEPPOL` countryMandate. All optional fields for that countryMandate would be excluded.\n\nThe `$filter`can be used on any key that is in the response. Only `eq` and `contains` operators are supported.\n\nIf you click on Visualize after sending the request, you will also be able to see an example UBL for the `countryMandate` you requested. The UBL will also be stored as a global variable.  \nThis is powered by a test script in the collection. It is not available as a feature of the ELR API.",
+                "operationId": "getdatainputfields",
+                "parameters": [
+                    {
+                        "name": "$filter",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "example": "requiredFor/countryMandate eq PL-B2B-EINVOICE OR conditionalFor/countryMandate eq PL-B2B-EINVOICE OR optionalFor/countryMandate eq PL-B2B-EINVOICE"
+                        }
+                    },
+                    {
+                        "name": "$top",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "example": "10"
+                        }
+                    },
+                    {
+                        "name": "$skip",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "example": "1"
+                        }
+                    },
+                    {
+                        "name": "$count",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "example": "true"
+                        }
+                    },
+                    {
+                        "name": "$countOnly",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "example": "true"
+                        }
+                    },
+                    {
+                        "name": "avalara-version",
+                        "in": "header",
+                        "schema": {
+                            "type": "string",
+                            "example": "1.0"
+                        }
+                    },
+                    {
+                        "name": "x-avalara-client",
+                        "in": "header",
+                        "schema": {
+                            "type": "string",
+                            "example": "{{X-Avalara-Client}}"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        }
+    },
+    "components": {
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "scheme": "bearer"
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "About this guide",
+            "description": "This guide describes the steps you should follow in order to integrate E-Invoicing functionality into your ERP system. Upon completion, your integration will be able to submit an document, check the status of a submitted document, retrieve a summary of documents sent & received and download the available formats of a document.\n\nA current list of the E-Invoicing country mandates that are supported can be retrieved through the `GetMandates` endpoint within authentication or user experience folder.\n\nThe sections are broken down into individual milestones in the order that they should be completed, so be sure to complete a milestone before moving on to the next.\n\nFor **technology partners**, each milestone includes a Certification Requirements section for you to quickly ascertain what needs to be accomplished in order to earn an Avalara ELR badge. The badge requirements are broken down into the following types:\n\n- **Required:** This design element is required in order to become certified.\n- **Conditional:** Depending on your use case, this design element may be required.\n- **Suggested:** This design element is not required, but we recommend that your UI includes suggested elements.\n    \n\nNote that certification does not entail a code review from Avalara. The requirements are provided to help you create an integration that is straightforward and uncomplicated for your end users.\n\nFor **API customers**, we recommend that you follow this guide when using ELR APIs in your own systems.\n\n> **Disclaimer:**; The information provided in this Integration Guide is based on standard practices. It is up to each individual developer to determine the applicability of such information and to verify the functionality and use of the information. All information, including examples of code, is provided on an \"As-is\" basis. Use of Avalara's website is covered by Avalara's site terms located here: [Terms &amp; Conditions](https://www.avalara.com/us/en/legal/terms.html) \n  \n\n### About this Postman collection\n\nThis Postman collection **IS** designed to be used for a variety of purposes:\n\n- Demo the functionality of Avalara E-Invoicing & Live Reporting\n- Add context to our API documentation\n- Set expectations of a technology partner built integration with the Avalara E-Invoicing service\n    \n\n> **Info**: The collection has helper functions within pre-requests scripts at collection and folder levels that negate the need for a 'less technical' user to refresh access tokens, set multiple values elsewhere, or to avoid duplicate values. The collection also has chaining functions written into the pre-request and test scripts which allows users to run folders (groups of requests) as workflows that we believe are likely to be similar to how you choose to integrate with the Avalara E-Invoicing service. \n  \n\nThis Postman collection **ISN'T** designed to be used as an SDK. The code snippet examples for each request are generated automatically by Postman. Avalara has no influence over how these snippets are generated, nor whether they will work.\n\n##### How to use this collection:\n\n1. Click the _Run in Postman_ button (in the top right of the browser)\n2. Select _Postman for Windows_ when prompted by the pop-up\n3. Import into the Postman workspace of your choice\n    1. The import includes both a Collection and a template Environment\n4. Within the [selected Postman environment](https://learning.postman.com/docs/sending-requests/managing-environments/#selecting-an-active-environment), ensure that a `serviceEnvironment` variable value is set appropriately for the client credentials that you will enter in the next step:\n    1. The list of options are:\n        1. `SBX` for Sandbox environment, **or**\n        2. `PRD` for Production environment\n5. Within the selected Postman environment, ensure that `clientId` and `clientSecret` variable values are set appropriately for the `serviceEnvironment`\n6. Try out any request! - We would suggest: _**Authentication**_ **\\>** _**GetMandates**_\n    \n\n---"
+        },
+        {
+            "name": "Planning your integration",
+            "description": "This section provides an overview of the Avalara ELR certification requirements that your integration can enable to provide a meaningful value-add service to your customers.\n\n### Core Requirements\n\nThis section provides an overview of the core Avalara ELR features that your integration must enable to achieve certification. Review this section to help you plan your integration.\n\n#### Administration & Utilities\n\nThis section describes the requirements for the configurations window of your integration.\n\n| **Name** | **Type** | **Description** | **Comment** | **Endpoints/Models** |\n| --- | --- | --- | --- | --- |\n| E-Invoicing configurations window | Required | Users must be able to enter a valid Avalara ELR service URL and authenticate to the Avalara ELR API service using one of the available authentication methods. |  |  |\n| Test connection | Required | Users must be able to test that their Authentication credentials have worked successfully and they are connected to the ELR API service. |  | POST {{tokenRequestUrl  <br>}}/connect/token to get auth token  <br>  <br>[GetMandates](https://developer.avalara.com/api-reference/e-invoicing/einvoice/methods/Mandates/GetMandates/) to test working with E-Invoicing API |\n| Enable integration | Required | Users must be able to enable/disable the integration with the ELR API. |  |  |\n| Mandate configuration | Conditional | Users must be able to set the logic/decision matrix used to determine when a countryMandate is used for a given document for a specific company/entity.  <br>  <br>A user must also be able to select a default or customized mapping to be used for the selected mandate for all of the document types (dataFormats) that must be supported under that countryMandate.  <br>  <br>Pre-populated default/suggested values that are editable are acceptable. | This functionality is required when your application can be used to produce sales (outbound documents/credit note) documents. | [GetMandates](https://developer.avalara.com/api-reference/e-invoicing/einvoice/methods/Mandates/GetMandates/) |\n| Submission scheduling | Conditional | Users can configure the frequency on which the mandate configuration logic process is run, or select an action/event that will trigger the process for an active document.  <br>Pre-populated default/suggested values that are editable are acceptable. | This functionality is required when your application can be used to produce sales (outbound invoices/credit note) documents. |  |\n| View mandate mappings | Required | Users can view the integrations default mappings for each countryMandate that your integration has been designed and tested to support. |  |  |\n| Retrieve relevant input fields by countryMandate | Suggested | Users can select a countryMandate to retrieve and view a list of data input fields needed to support the selected countryMandate. |  | [GetMandates](https://developer.avalara.com/api-reference/e-invoicing/einvoice/methods/Mandates/GetMandates/), [GetDataInputFields](https://developer.avalara.com/api-reference/e-invoicing/einvoice/methods/Data%20Input%20Fields/GetDataInputFields/) |\n| Customisable mandate mappings | Required | Users can clone any existing mapping, edit and save to cover any customizations they have done as part of their ERP/application implementation (source fields), or any specific use cases that would not be covered by your provided default mappings (adding required input fields). |  |  |\n| User guide | Required | Users must be able to access a guide explaining how to initially configure, use on a daily basis, and maintain the integration. |  |  |\n| API logs | Required | Users must be able to access logs containing the raw request and response (headers and body) for all API calls made by the integration to the ELR API to help facililtate troubleshooting. How long the logs are persisted is up to you (1 week / 1 month etc). |  |  |\n\n#### Document Submission\n\nThis section describes requirements for how documents are submitted to the Avalara ELR service.\n\n| Name | Type | Description | Comment | Endpoints/Models |\n| --- | --- | --- | --- | --- |\n| Submit the document | Conditional | Users must be able to submit a document with the input data set they have specified for a given E-Invoicing mandate/specification. | This functionality is required when your application can be used to produce sales (outbound) documents. | [SubmitDocument](https://developer.avalara.com/api-reference/e-invoicing/einvoice/methods/Invoices/SubmitDocument/)  <br>  <br>[GetDataInputFields](https://developer.avalara.com/api-reference/e-invoicing/einvoice/methods/Data%20Input%20Fields/GetDataInputFields/) for list of fields needed per countryMandate  <br>  <br>[GetMandates](https://developer.avalara.com/api-reference/e-invoicing/einvoice/methods/Mandates/GetMandates/) for available options for other POST SubmitDocument metadata values |\n| Get the status of the sent document | Conditional | Users needs to be able understand the status of the submitted document. | This functionality is required when your application can be used to produce sales (outbound) documents. | [GetDocumentStatus](https://developer.avalara.com/api-reference/e-invoicing/einvoice/methods/Invoices/GetDocumentStatus/) |\n| Download the document | Conditional | Users can download the document in the format provided by the tax authority, so that it can be sent to the recipient using one of the client applications standard options. | If the Document Monitoring & Management advanced feature is not in scope, this functionality is required to support mandates that follow a Pre-clearance model. | [DownloadDocument](https://developer.avalara.com/api-reference/e-invoicing/einvoice/methods/Invoices/DownloadDocument/) |\n\n#### Server Audit Clarity and Installation Requirements\n\n| Name | Type | Description | Comment | Endpoints/Models |\n| --- | --- | --- | --- | --- |\n| Pass Connector Identifier Information via the X-Avalara-Client header | Required | Integrations must include information about the connector, such as name, version, and company name, as a signature to all requests made to the Avalara ELR API. | Value to be passed will be provided by Partner Launch Services for signed Technology Partners. This is not required for requests to the Authorization server. |  |\n| Reasonable Messages on Server-Side Analysis | Required | There should be no errors except those that would result from normal (but invalid) user input. Such errors must be logged/displayed appropriately to the system. |  |  |\n| Demonstrate and document installation of software | Required | Users should have an easy and trouble-free installation experience. |  |  |\n\n### Advanced features\n\nIn addition to the core features, your integration may want to enable one or more of the Avalara ELR advanced features/functionalities. The following advanced features are currently available:\n\n- Document Monitoring & Management\n    \n\n#### Document Monitoring & Management\n\nThis section describes features for monitoring and accessing outbound and inbound invoices.\n\n| Name | Type | Description | Comment | Endpoints/Models |\n| --- | --- | --- | --- | --- |\n| Get a summary of documents | Required | Users can see a summary list of e-documents that they have sent or received. |  | [GetDocumentList](https://developer.avalara.com/api-reference/e-invoicing/einvoice/methods/Invoices/GetDocumentList/) |\n| Get document status details | Required | Users can see a summary list of events for a specific document. |  | [GetDocumentStatus](https://developer.avalara.com/api-reference/e-invoicing/einvoice/methods/Invoices/GetDocumentStatus/) |\n| Download the document | Required | User can download the document in the format provided by/to the network/tax authority | This may be required to comply with archiving requirements for certain mandates. | [DownloadDocument](https://developer.avalara.com/api-reference/e-invoicing/einvoice/methods/Invoices/DownloadDocument/) |\n| Import inbound document to client application | Suggested | Users can click a button to import the inbound document into the ERP/Purchasing System without manually entering document data. | If the ERP application supports a posted/un-posted status (or equivalent) for a document document type, the document should be imported with status of unposted. | [DownloadDocument](https://developer.avalara.com/api-reference/e-invoicing/einvoice/methods/Invoices/DownloadDocument/) |\n| Import inbound document automation | Suggested | Users can configure the frequency on which an automated process to import the inbound document is run. Pre-populated default/suggested values are acceptable. |  |  |"
+        },
+        {
+            "name": "Resources",
+            "description": "### Additional resources\n\nThe following additional resources can be helpful to you when completing the milestones described in this guide:\n\n- [Avalara E-Invoicing eBook](https://www.avalara.com/eu/en/learn/whitepapers/the-future-of-e-invoicing.html)\n- [Avalara ELR API](https://developer.avalara.com/api-reference/e-invoicing/einvoice/)\n- [UBL 2.1 - Documentation](https://docs.oasis-open.org/ubl/os-UBL-2.1/UBL-2.1.html)\n- [Peppol BIS Billing 3.0 - Invoice Schema](https://docs.peppol.eu/poacc/billing/3.0/syntax/ubl-invoice/tree/)\n- [E-Invoicing FAQ](https://ec.europa.eu/digital-building-blocks/wikis/display/DIGITAL/eInvoicing+FAQ)\n    \n\n---"
+        },
+        {
+            "name": "Glossary",
+            "description": "#### Glossary of Terms\n\nBefore continuing, be sure to review the terms in this section, which are provided to help you better understand E-Invoicing and some of the abbreviations used in this guide:\n\n| **Terms** | **Description** |\n| --- | --- |\n| EN 16931 | [EN 16931](https://ec.europa.eu/digital-building-blocks/wikis/display/DIGITAL/EN+16931+compliance) is the European standard on e-invoicing that was developed and published by the European Committee for Standardization (CEN), at the request of the European Commission.  There are two main parts to the standard, a semantic data model and the two mandatory syntaxes that comply with the standard i.e. UBL and CII. |\n| UBL | [UBL](https://docs.oasis-open.org/ubl/os-UBL-2.1/UBL-2.1.html) is the abbreviation for Universal Business Language. It is a technical specification and standard XML syntax that is the result of international collaboration to define a library of standard electronic XML business documents such as e-invoices. |\n| CII | CII is the abbreviation for Cross Industry Invoice. It is a technical specification that is used to create a message syntax which can be exchanged globally between trading partners. It was developed with input from Governments and Tax Authorities, including the UK’s HMRC. |\n| Peppol | Pan-European Public Procurement Online, or Peppol, was originally created to set common standards for public procurement across EU (B2G). However, today it is both a delivery network and standard for e-invoicing (and other procurement processes). Peppol meets the European e-invoicing standard (EN16931) through its [Peppol BIS Billing 3.0 specifications](https://docs.peppol.eu/poacc/billing/3.0/bis/). The Peppol network is accessed through access points and certified providers and is therefore a good example of the 4-Corner e-invoicing model. |\n| XML | XML is the abbreviation for Extensible Markup Language, and it is a language and file format for the storing, transmitting, and reconstructing of data. |\n| Schema | A schema is a formal way of describing an XML, setting out the detailed constraints on an XML document’s logical structure. Tax authorities will generally define a specific schema for an e-invoice or digital reporting requirement. |\n| Syntax | A syntax is the electronic message structure. Another way of looking at a syntax is that it is the machine-readable language used to represent the required data elements. Correct deployment of the format allows for automated processing of the content. UBL is the standard XML syntax for electronic business documents, including e-invoices. A second common XML syntax is CII. |\n| Hybrid PDF | A hybrid e-invoice combines both a human-readable PDF for users and machine readable XML data for process automation. |\n| CIUS | CIUS is the abbreviation for Core Invoice Usage Specification. It is a specification and set of instructions that provides a business with detailed guidance, explanations, examples, and business rules related to the actual implementation and use of structured information elements present in a core invoice model. CIUS are generally implemented at a national level, setting out specific rules and restrictions. |\n| Semantic Data Model | A Semantic Data Model is a structured and logically interrelated set of terms and their meanings that specify the core elements of an electronic invoice. In effect, this defines the content requirements of an e-invoice, what data elements need to be included and what they mean (like a data dictionary). |\n| EDI | EDI (Electronic Data Interchange) is the technical term for the standardized exchange of digital information between two parties via their ERP, accounting or billing system. |\n| 4-Corner E-Invoicing model | Under the four-corner model, there are four corners underpinning the issue, exchange and receipt of e-invoices, namely C1 (the Sender of Invoice) who sends an e-invoice to C2 (its service provider), who sends the e-invoice to C3 (its customer’s service provider), who in turn sends the invoice to C4 (the Customer – the ultimate receiver of the e-invoice). The senders and receivers of e-invoices (C1 and C4) utilize their own choice of system/software. |\n| Customer | The customer is the legal person or organization who is in demand of a product or service. Examples of customer roles: buyer, consignee, debtor, contracting authority. |\n| Supplier | The supplier is the legal person or organization who provides a product or service. |\n| Creditor | The party to whom a debt is owed. The party that claims the payment and is responsible for resolving billing issues and arranging settlement. The party that sends the invoice or credit note. Also known as invoice issuer, accounts receivable or seller. |\n| Debtor | The party that owes a debt. The party responsible for making settlement relating to a purchase. The party that receives the invoice or credit note. Also known as invoice, accounts payable, or buyer. |\n| B2G | Business-to-Government |\n| G2G | Government-to-Government |\n| B2B | Business-to-Business |\n| B2C | Business-to-Consumer |\n| G2C | Government-to-Citizen |\n| Code lists | Code lists that have been standardized within Eurostat. This means that unique concepts defined by single identifiers (codes) are used across different statistical domains. |\n\n---"
+        },
+        {
+            "name": "Getting started",
+            "description": "To use _Avalara ELR_ API you must have access, generate API client credentials, and be able to configure your account with various bits of information:"
+        },
+        {
+            "name": "How do I get access to sandbox?",
+            "description": "#### Prerequisites\n\nBefore you ask for a sandbox environment, you need to have completed one of the steps below:\n\n- Technology Partner Contract signed, OR\n- Not-for-Resale (Sandbox) agreement has been signed\n    \n\nIf you are a (prospective) Technology Partner and are yet to complete one of these steps, please reach out to your Business Development contact to assist you further.\n\n### Getting access\n\nOnce you are done with the steps previously described, your Business Development representative should trigger a process that will result in a specifically named first user receiving an email with a link to (re)set their password.\n\nOnce complete the user will have access to the ELR User Portal. ([https://sandbox.elr.avalara.com](https://sandbox.elr.avalara.com/))"
+        },
+        {
+            "name": "Auth Credentials",
+            "description": "To use the Avalara ELR API (and therefore also this Postman collecton), you need to generate the client credentials that are used for Authentication:\n\n#### Generate client credentials through the ELR user portal\n\n- Log on to the ELR Monitor UI for the appropriate environment.\n- Click on [Integrations](https://sandbox.elr.avalara.com/organizations)\n- Click on Generate Token\n- Download or copy the resulting `Key` and `Secret`\n    \n\nAs you’ll notice, this page is restricted to only account administrators. Keep in mind that you only have one set of credentials, and Avalara is unable to recover this!\n\nWhen you generate a set of client credentials, all previous values for the `Secret` are immediately revoked and no longer usable. This is helpful because if your `Secret` is lost or stolen you can revoke it instantly. However, generating a new `Secret` is a risk because this may affect existing systems using the Avalara ELR API.\n\n> This Postman collection has scripts that will help manage Authentication. All you have to do is populate the active Postman environment's `clientId` and `clientSecret` variables with the `Key` and `Secret`values you generated by following the steps above. \n  \n\nYou are now ready to move on!"
+        },
+        {
+            "name": "Activations",
+            "description": "Avalara ELR users will be able to go through an 'activation' process for each `countryMandate` for which they need to use ELR.\n\nTo continue with this _Avalara ELR Integration Guide_, let’s set up a test Peppol identifier, so that you can test **sending** and **receiving** invoices through a Peppol based country mandate.\n\nYou need to complete this step, so that you can send yourself a document (flow = `out`), which you will also receive as a inbound document (flow = `in`). This mimmicks receiving a purchase document, so that you can test any code or process that your integration uses, which is dependent on the flow type:\n\n> Currently, in the **Sandbox** environment**,** there is **no access** to the **Activations area in the Avalara Customer Portal.** \n  \n\n**To get a test Peppol Identifier added to your Sandbox tenant:**\n\n1. Contact your Avalara technical resource (or [DG-PartnerLaunch@avalara.com](mailto:DG-PartnerLaunch@avalara.com)) with the following information:\n    1. Your ELR API `Key` (clientId)\n    2. A value that you will be able to pass in as data for each document you submit to a Peppol based `countryMandate`, which has the same syntax as a VAT number, e.g. \"DE987654321\".\n    3. Confirmation that the VAT number is not being used already on the Peppol test network (by other Peppol Service providers)\n\n**To use the Peppol Identifier to mimmick receiving an inbound invoice:**\n\nWithin the `data` part of the `SubmitDocument` request (the document UBL):\n\n- Pass the value you gave in point 1.b above (e.g.`DE987654321`) in the below UBL Invoice 2.1 paths:\n    - Invoice/**cac:AccountingSupplierParty**/cac:Party/cbc:EndpointID\n    - Invoice/**cac:AccountingCustomerParty**/cac:Party/cbc:EndpointID\n- Pass a value from this [code list](https://docs.peppol.eu/poacc/billing/3.0/codelist/eas/) that is mapped from the countryCode of the VAT number in the below UBL Invoice 2.1 paths ( if countryCode is\\`DE\\`, `schemeID` = `9930`):\n    - Invoice/**cac:AccountingSupplierParty**/cac:Party/cbc:EndpointID/@schemeID\n    - Invoice/**cac:AccountingCustomerParty**/cac:Party/cbc:EndpointID/@schemeID\n\nYou can also test this working by simply by adding Postman environment variables called `endpointId` and `schemeId` and giving them values as above.\n\nYou can then [Try](https://learning.postman.com/docs/sending-requests/examples/#trying-an-example) the `SubmitDocument` saved example called \"Send & Receive\".\n\nBoth the resulting outbound document and the inbound document will be available to view using the `GetDocumentList` endpoint.\n\n> **Please note:** It isn't possible to test receiving inbound documents from non-Peppol `countryMandates`, unless the `countryMandate` has the ability to provide a test environment, AND you already have your own test credentials for that countryMandate. Some `countryMandates` provide some basic testing capabilities, but won't necessarily enable you to demonstrate a full end-to-end document flow."
+        },
+        {
+            "name": "Authentication",
+            "description": "This first task describes authenticating in Avalara e-lnvoicing. This section includes the available authentication method. It also provides helpful information about Avalara e-lnvoicing's two environments: **Sandbox** and **Production**.\n\n### Sandbox vs Production environments\n\nAvalara provides two different environments for Avalara ELR: **Sandbox** and **Production**. Each environment is completely separate, and each has its own credentials. If you have a Sandbox account, you cannot use that account to log onto Production and vice versa.\n\nYou may want to share your Sandbox credentials with developers, and reserve Production credentials for accountants/financial controllers. Keeping accounts separate helps avoid the risk of reporting test data to a tax authority.\n\n|  | **Sandbox** | **Production** |\n| --- | --- | --- |\n| Avalara ELR API service URL | [https://api.sbx.avalara.com](https://api.sbx.avalara.com) | [https://api.avalara.com](https://api.avalara.com) |\n| Avalara ELR User Portal (UI) | [https://sandbox.elr.avalara.com](https://sandbox.elr.avalara.com/organizations) | [https://elr.avalara.com](https://elr.avalara.com) |\n| Avalara Identity Service URL | [https://ai-sbx.avlr.sh](https://ai-sbx.avlr.sh) | [https://identity.avalara.com](https://identity.avalara.com) |\n| Monitoring | 24/7 Monitoring | 24/7 Monitoring View Avalara status at [https://status.avalara.com/](https://status.avalara.com/) |\n| Data | All Sandbox data is fully separate from Production data. | All Production data is fully separate from Sandbox data. |\n| Updates | Generally updates a few days earlier than Production so that customers can experiment with new releases before they go live. | Updated a few days to a week after Sandbox so that customers can preview the new release on Sandbox before it is live. |\n\n### **Authentication method**\n\nAuthentication for the E-Invoicing API works by obtaining an access token which, used as **Bearer Token,** will allow access to the ELR service API.\n\n### **Authentication workflow**\n\nThe following workflow describes the process for authentication and testing connection.\n\n<img src=\"https://content.pstmn.io/73600d51-9dda-427c-ab9b-109c300f2ce6/aW1hZ2UucG5n\" alt=\"\" height=\"945\" width=\"1271\">"
+        },
+        {
+            "name": "Error handling",
+            "description": "#### API error handling\n\nThe Avalara ELR API responds using the standard [HTTP response codes](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status).\n\nResponse codes between 400 and 499 are called [Client Errors](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status#client_error_responses), and indicate a mistake in an API call.\n\nPlease see the provided examples for each endpoint and method in this collection to better understand all potential HTTP error codes and messages.\n\nIf your program gets an HTTP response code between 400 and 499, here’s how to proceed:\n\n- Parse the error message using a JSON parsing engine\n- Display the summary of the error to the user\n- Allow the user to make a change to their request, or retry their action\n    \n\nResponse codes between 500 and 599 refer to internal [Server Errors](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status#server_error_responses) within Avalara E-Invoicing itself. Each internal error is automatically logged and reported to our development team for triage\n\n#### Transaction validation rules\n\nIn addition to the API error codes, each `countryMandate` has [transaction validation rules](https://docs.peppol.eu/poacc/billing/3.0/bis/#cen_rules) that are tested:\n\n1. by Avalara **before** an e-Invoice is sent to the end recipient or tax authority, or\n2. by a tax authority **after** an e-Invoice has sent to a tax authority by Avalara\n    \n\nDescriptive errors resulting from failure against such validations are returned as part of successful invoiceStatus requests.\n\n---"
+        },
+        {
+            "name": "Design the submission workflow",
+            "description": "This section describes how you should design your E-Invoicing application's document submission workflow.\n\n### Design considerations\n\nWhat event should trigger the submission of a document to the Avalara ELR API? How will your application know what source data is necessary for each `countryMandate`?  \nWhere will the status of that document be surfaced to a user?"
+        },
+        {
+            "name": "Document Submission",
+            "description": "### Document submission workflow\n\nThe following workflow describes the process for submitting a document and polling for a status.\n\n<img src=\"https://content.pstmn.io/ff8c1bc5-3679-4930-903c-95b30acc73fb/aW1hZ2UucG5n\" width=\"887\" height=\"692\">\n\n\\> **TIP:** You can **Run** this folder within the Postman application:"
+        },
+        {
+            "name": "Design the user experience",
+            "description": "Whether you are a technology partner working to build a great integration or an API customer, this section describes how you should design your E-Invoicing application.\n\n### Design considerations\n\nWhat should your integration's user interface look like? What design elements should you include?\n\nThese UI elements have been carefully crafted to help you create an integration that is straightforward and uncomplicated for your users."
+        },
+        {
+            "name": "Admin and Utilities",
+            "description": "### E-Invoicing settings window\n\nYour E-Invoicing settings window must allow the user to specify the following configuration/connection information:\n\n- Service URL to access the connector (for example, Production or Sandbox)\n- Login credentials ( `clientId` and `clientSecret`)"
+        },
+        {
+            "name": "Document Monitoring & Management",
+            "description": "Below are the endpoints and methods needed to build an Document Monitor & Manager, including:\n\n- a summary of all documents\n- links to details/events associated with each documents\n- a button to download and/or import the document\n    \n\n### **Document Monitoring workflow**\n\nThe following workflow describes the process for a typical user journey for reviewing and managing documents.\n\n<img src=\"https://content.pstmn.io/94693da7-9e91-461f-8327-2ba53f8db773/aW1hZ2UucG5n\" alt=\"\" height=\"846\" width=\"640\">"
+        },
+        {
+            "name": "Functional Review",
+            "description": "#### It's time to review your integration\n\n**Congratulations!** At this point, you've completed all previous milestones. If you're a technology partner, you're now ready for your integration to be reviewed.\n\nTo initiate a functional review:\n\n1. Check if you have completed all of the required milestones.\n2. Contact your assigned technical resource by e-mail, and copy to [dg-partnerlaunch@avalara.com]().\n3. Avalara will schedule a recorded functional review call with you, during which you will demonstrate your integration's functionality as below:\n    \n\n#### What to include in your demo\n\nYour integration should include all requirements mentioned in the previous chapters.  \nDuring the functional review call, we would like you to answer/demonstrate:\n\n**How do you install or enable your integration?**\n\n- What, if any, are the dependencies/pre-requisites for using your integration?\n- Where can a user (prospect or customer) access the user guide for your integration?\n    \n\n**Configuration screen and authentication process:**\n\n- Demonstrate the configurations between ELR Sandbox and Production environment\n- Demonstrate how a user can set up Avalara API credentials\n- Demonstrate how a user can test authentication connection\n    - Demonstrate success with valid credentials\n    - Demonstrate error message with invalid credentials\n- Demonstrate how a user can enable/disable the integration\n    \n\n**Mandate Configuration**\n\n- Demonstrate how a user can set the logic/decision matrix used to determine when a countryMandate is used for a given document for a specific company/entity\n    - Demonstrate how the user selects the `countryMandate` from a dynamic list, powered by `GetMandates` method\n- Demonstrate how a user can configure the frequency on which the mandate configuration logic process is run, **or** select an action/event that will trigger the process for an active document\n    \n\n**Document mappings**\n\n- Demonstrate how a user can view the default mappings that you have built for the integration\n- Demonstrate how a user can see a list of the required/conditional/optional data input (UBL) fields for a given `countryMandate`\n- Demonstrate how a user can clone, edit and save their own custom mapping\n    - In the user guide, where is specific guidance on how a user can complete a mapping customisation process?\n- Demonstrate how a user can apply a custom mapping to a specific (or multiple) `countryMandate` process(es)\n    \n\n**Document submission**\n\n- Demonstrate how a user can trigger/configure the process to submit:\n    - a document to the countryMandate `DE-B2B-PEPPOL`, AND\n    - a different document to the countryMandate `GB-B2B-PEPPOL`\n    - a third document to countryMandate `DE-B2B-PEPPOL` after a customised mapping has been done (different source field or new target field)\n- **Demonstrate how a user (or automated process on their behalf) downloads a outbound document that must still be sent to the recipient (where `countryMandate` has `eInvoicingFlow` = \"Pre-Clearance\").\n    \n\n**Not required if you targetting the Document Monitoring & Management advanced feature\n\n**Document Monitoring & Management** (if targeted as an Advanced Feature)\n\n- Demonstrate how a user can retrieve a list of documents with summary information:\n    - sent ( flow = out), **and**\n    - received (flow = in)\n- Demonstrate how a user can drill down to view the events for a specific document\n- Demonstrate how a user can download the document in the `countryMandate` required format\n- \\*Demonstrate how a user can import an inbound document into ERP (mapped from UBL to ERP format)\n- \\*Demonstrate how a user can configure the frequency at which an automated process for importing inbound documents can run\n    \n\n\\*Not a mandatory requirement but nice to have for a better and more complete user journey\n\n**Server Audit Clarity**\n\n- What \"X-Avalara-Client\" header value are you passing in each request to the ELR service?\n- Demonstrate how a user can access API logs that would result in an analysis of potential server-side errors\n- How long are the API logs persisted?\n    \n\n#### Congratulations, you've made it to the end!\n\nOur Partner Launch team will review all evidence submitted according to the orientation in this previous section, and get back to you with feedback as soon as possible."
+        }
+    ]
+}
